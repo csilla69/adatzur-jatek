@@ -18,6 +18,12 @@ body { font-family: Arial; text-align:center; background:#fafafa; }
     line-height:1.6;
 }
 
+#penalty {
+    color:#c62828;
+    font-weight:bold;
+    height:20px;
+}
+
 table { border-collapse: collapse; margin:25px auto; background:white; }
 
 td, th {
@@ -58,9 +64,12 @@ A feladatotok az, hogy logikus gondolkodással kibogozzátok az adatkáoszt,
 és kiderítsétek, melyik autóhoz melyik kilométer- és töltési adat tartozik. 
 
 <strong>Figyelem:</strong> az adatok csak egyféleképpen állhatnak össze helyesen.
+<br><br>
+<strong>Fontos:</strong> minden Ellenőrzés gomb megnyomása fél perc időlevonással jár.
 </div>
 
 <div id="timer">⏱ 10:00</div>
+<div id="penalty"></div>
 <button onclick="checkSolution()">Ellenőrzés</button>
 
 <table>
@@ -133,7 +142,6 @@ A feladatotok az, hogy logikus gondolkodással kibogozzátok az adatkáoszt,
 <td class="cell" data-block="ak2" data-r="0" data-c="1"></td>
 <td class="cell" data-block="ak2" data-r="0" data-c="2"></td>
 <td class="cell" data-block="ak2" data-r="0" data-c="3"></td>
-
 <td colspan="4" rowspan="4" class="ev-cell">
 <svg viewBox="0 0 300 180">
 <rect x="40" y="80" width="220" height="50" rx="15" fill="#2e7d32"/>
@@ -185,7 +193,7 @@ A feladatotok az, hogy logikus gondolkodással kibogozzátok az adatkáoszt,
 
 <script>
 
-/* X LOCK + STABIL MŰKÖDÉS */
+/* ===== IDŐZÍTŐ + LEVONÁS ===== */
 
 let timeLeft=600;
 let timerStarted=false;
@@ -203,10 +211,7 @@ if(timerStarted) return;
 timerStarted=true;
 timerInterval=setInterval(()=>{
 if(timeLeft>=0){
-let m=Math.floor(timeLeft/60);
-let s=timeLeft%60;
-if(s<10)s="0"+s;
-document.getElementById("timer").innerHTML="⏱ "+m+":"+s;
+updateTimer();
 timeLeft--;
 if(timeLeft<0){
 clearInterval(timerInterval);
@@ -216,12 +221,17 @@ finishGame();
 },1000);
 }
 
+function updateTimer(){
+let m=Math.floor(timeLeft/60);
+let s=timeLeft%60;
+if(s<10)s="0"+s;
+document.getElementById("timer").innerHTML="⏱ "+m+":"+s;
+}
+
 document.querySelectorAll(".cell").forEach(cell=>{
 cell.addEventListener("click",function(){
-
 if(gameLocked) return;
 startTimer();
-
 if(this.textContent==="X") return;
 
 if(this.textContent===""){
@@ -233,7 +243,6 @@ removeAutoX(this);
 this.textContent="";
 this.classList.remove("correct");
 }
-
 });
 });
 
@@ -264,9 +273,18 @@ x.removeAttribute("data-auto");
 function checkSolution(){
 if(gameLocked) return;
 
-document.querySelectorAll("#clues li").forEach(li=>{
-li.style.textDecoration="none";
-});
+// ⏱ -1 perc
+timeLeft -= 30;
+if(timeLeft < 0) timeLeft = 0;
+updateTimer();
+
+document.getElementById("penalty").innerText="-fél perc az ellenőrzés miatt!";
+setTimeout(()=>{ document.getElementById("penalty").innerText=""; },1500);
+
+if(timeLeft===0){
+finishGame();
+return;
+}
 
 document.querySelectorAll(".cell").forEach(cell=>{
 const key=`${cell.dataset.block}-${cell.dataset.r}-${cell.dataset.c}`;
@@ -317,13 +335,10 @@ c.textContent="";
 c.classList.remove("correct");
 c.removeAttribute("data-auto");
 });
-document.querySelectorAll("#clues li").forEach(li=>{
-li.style.textDecoration="none";
-});
 timeLeft=600;
 timerStarted=false;
 gameLocked=false;
-document.getElementById("timer").innerHTML="⏱ 10:00";
+updateTimer();
 },1000);
 }
 
